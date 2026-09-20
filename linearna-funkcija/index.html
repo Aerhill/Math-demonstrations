@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interaktivni graf linearne funkcije.">
+  <title>Linearna funkcija | Interaktivni graf</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23060911'/%3E%3Cpath d='M10 49 54 14' stroke='%231fffd2' stroke-width='6' stroke-linecap='round'/%3E%3Ccircle cx='34' cy='29' r='5' fill='%23ff4b61'/%3E%3C/svg%3E">
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #03060c;
+      color: #f2f8ff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 40px; }
+    header { margin-bottom: 22px; }
+    .eyebrow { color: #1fffd2; font-size: .78rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 7px 0 4px; font-size: clamp(1.7rem, 4vw, 2.55rem); line-height: 1.1; }
+    .formula { color: #a8b8cb; font-size: 1.05rem; }
+    .workspace { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 18px; align-items: stretch; }
+    .panel, .chart-card { border: 1px solid #253243; background: #070d16; border-radius: 16px; box-shadow: 0 18px 55px rgba(0, 0, 0, .35); }
+    .panel { padding: 22px; }
+    .panel h2 { margin: 0 0 8px; font-size: 1.02rem; }
+    .help { color: #a8b8cb; font-size: .9rem; line-height: 1.45; margin: 0 0 22px; }
+    .control { margin: 18px 0; }
+    .control-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    label { font-size: .95rem; font-weight: 700; }
+    output { color: #1fffd2; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-weight: 800; }
+    .fields { display: grid; grid-template-columns: 1fr 82px; gap: 10px; align-items: center; }
+    input[type="range"] { width: 100%; accent-color: #1fffd2; }
+    input[type="number"] { width: 100%; padding: 8px 9px; border: 1px solid #40526a; border-radius: 8px; background: #0c1522; color: #f2f8ff; font: inherit; }
+    .hint { margin: 23px 0 0; padding-top: 17px; border-top: 1px solid #243141; color: #c9d4e1; font-size: .86rem; line-height: 1.5; }
+    .red-dot { color: #ff4b61; font-size: 1.1em; }
+    .chart-card { padding: 10px; min-width: 0; }
+    canvas { display: block; width: 100%; height: min(68vh, 610px); min-height: 390px; cursor: crosshair; border-radius: 10px; touch-action: none; }
+    .readout { min-height: 28px; padding: 7px 11px 2px; color: #ff7988; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .9rem; }
+    @media (max-width: 760px) { main { width: min(100% - 22px, 620px); padding-top: 20px; } .workspace { grid-template-columns: 1fr; } canvas { height: 55vh; min-height: 340px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="eyebrow">Istraži funkciju</div>
+      <h1>Linearna funkcija</h1>
+      <div id="formula" class="formula">f(x) = 2x + 1</div>
+    </header>
+
+    <section class="workspace" aria-label="Interaktivni graf linearne funkcije">
+      <aside class="panel">
+        <h2>Koeficijenti</h2>
+        <p class="help">Promijeni koeficijente i prati kako se pravac mijenja.</p>
+        <div class="control">
+          <div class="control-title"><label for="aRange">Koeficijent smjera – a</label><output id="aOutput">2</output></div>
+          <div class="fields"><input id="aRange" type="range" min="-5" max="5" step="0.1" value="2"><input id="aNumber" type="number" min="-5" max="5" step="0.1" value="2" aria-label="Vrijednost koeficijenta a"></div>
+        </div>
+        <div class="control">
+          <div class="control-title"><label for="bRange">Odsječak na osi y – b</label><output id="bOutput">1</output></div>
+          <div class="fields"><input id="bRange" type="range" min="-10" max="10" step="0.1" value="1"><input id="bNumber" type="number" min="-10" max="10" step="0.1" value="1" aria-label="Vrijednost koeficijenta b"></div>
+        </div>
+        <p class="hint"><span class="red-dot">●</span> Pomakni pokazivač preko grafa. Crvena točka prikazuje točku na pravcu najbližu pokazivaču; njezine projekcije na osi daju vrijednosti x i y.</p>
+      </aside>
+      <div class="chart-card">
+        <canvas id="graph" aria-label="Graf linearne funkcije. Pomicanjem pokazivača prikazuju se koordinate točke na pravcu."></canvas>
+        <div id="readout" class="readout" aria-live="polite">Pomakni pokazivač preko grafa</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById('graph');
+      const ctx = canvas.getContext('2d');
+      const readout = document.getElementById('readout');
+      const formula = document.getElementById('formula');
+      const controls = ['a', 'b'].map(name => ({
+        name, range: document.getElementById(`${name}Range`), number: document.getElementById(`${name}Number`), output: document.getElementById(`${name}Output`)
+      }));
+      let pointer = null;
+
+      const state = () => ({ a: Number(controls[0].range.value), b: Number(controls[1].range.value) });
+      const clean = n => Math.abs(n) < 1e-9 ? 0 : n;
+      const format = n => clean(n).toLocaleString('hr-HR', { maximumFractionDigits: 2 });
+      const updateFormula = ({ a, b }) => {
+        const sign = b < 0 ? ' − ' : ' + ';
+        formula.textContent = `f(x) = ${format(a)}x${sign}${format(Math.abs(b))}`;
+      };
+      const sync = (control, value) => {
+        const n = Math.max(Number(control.range.min), Math.min(Number(control.range.max), Number(value)));
+        if (!Number.isFinite(n)) return;
+        control.range.value = n; control.number.value = n; control.output.textContent = format(n); draw();
+      };
+      controls.forEach(control => {
+        control.range.addEventListener('input', () => sync(control, control.range.value));
+        control.number.addEventListener('input', () => sync(control, control.number.value));
+      });
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        const scale = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(rect.width * scale); canvas.height = Math.round(rect.height * scale);
+        ctx.setTransform(scale, 0, 0, scale, 0, 0); draw();
+      }
+      function tickStep(span, pixels) {
+        const raw = span / Math.max(2, pixels / 85), power = 10 ** Math.floor(Math.log10(raw)), unit = raw / power;
+        return (unit <= 1 ? 1 : unit <= 2 ? 2 : unit <= 5 ? 5 : 10) * power;
+      }
+      function draw() {
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        if (!w || !h) return;
+        const pad = { left: 52, right: 22, top: 22, bottom: 41 };
+        const bounds = { xMin: -6, xMax: 6, yMin: -8, yMax: 8 };
+        const sx = (w - pad.left - pad.right) / (bounds.xMax - bounds.xMin);
+        const sy = (h - pad.top - pad.bottom) / (bounds.yMax - bounds.yMin);
+        const px = x => pad.left + (x - bounds.xMin) * sx;
+        const py = y => h - pad.bottom - (y - bounds.yMin) * sy;
+        const { a, b } = state();
+        updateFormula({ a, b });
+        ctx.clearRect(0, 0, w, h); ctx.fillStyle = '#03060c'; ctx.fillRect(0, 0, w, h);
+
+        ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(145, 168, 192, .18)'; ctx.fillStyle = '#dbe8f5'; ctx.font = '12px ui-monospace, SFMono-Regular, Consolas, monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        const xTick = tickStep(bounds.xMax - bounds.xMin, w);
+        for (let x = Math.ceil(bounds.xMin / xTick) * xTick; x <= bounds.xMax + 1e-9; x += xTick) {
+          const X = px(x); ctx.beginPath(); ctx.moveTo(X, pad.top); ctx.lineTo(X, h - pad.bottom); ctx.stroke();
+          if (Math.abs(x) > 1e-9) ctx.fillText(format(x), X, py(0) + 8);
+        }
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        const yTick = tickStep(bounds.yMax - bounds.yMin, h);
+        for (let y = Math.ceil(bounds.yMin / yTick) * yTick; y <= bounds.yMax + 1e-9; y += yTick) {
+          const Y = py(y); ctx.beginPath(); ctx.moveTo(pad.left, Y); ctx.lineTo(w - pad.right, Y); ctx.stroke();
+          if (Math.abs(y) > 1e-9) ctx.fillText(format(y), px(0) - 9, Y);
+        }
+        ctx.strokeStyle = '#f7fbff'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(pad.left, py(0)); ctx.lineTo(w - pad.right + 5, py(0)); ctx.moveTo(px(0), h - pad.bottom); ctx.lineTo(px(0), pad.top - 5); ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('x', w - pad.right + 3, py(0) + 9);
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText('y', px(0) - 10, pad.top - 4);
+        ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('0', px(0) - 8, py(0) + 8);
+
+        // Pravac se crta do granica koordinatnog sustava.
+        const candidates = [];
+        [bounds.xMin, bounds.xMax].forEach(x => { const y = a * x + b; if (y >= bounds.yMin && y <= bounds.yMax) candidates.push({ x, y }); });
+        [bounds.yMin, bounds.yMax].forEach(y => { if (a !== 0) { const x = (y - b) / a; if (x >= bounds.xMin && x <= bounds.xMax) candidates.push({ x, y }); } });
+        if (a === 0) candidates.push({ x: bounds.xMin, y: b }, { x: bounds.xMax, y: b });
+        candidates.sort((p, q) => p.x - q.x);
+        const p1 = candidates[0], p2 = candidates[candidates.length - 1];
+        if (p1 && p2) {
+          ctx.save(); ctx.shadowColor = '#1fffd2'; ctx.shadowBlur = 13; ctx.strokeStyle = '#1fffd2'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.moveTo(px(p1.x), py(p1.y)); ctx.lineTo(px(p2.x), py(p2.y)); ctx.stroke(); ctx.restore();
+        }
+
+        if (pointer && pointer.x >= pad.left && pointer.x <= w - pad.right && pointer.y >= pad.top && pointer.y <= h - pad.bottom) {
+          // Ortogonalna projekcija pokazivača na pravac u pikselima.
+          const p0 = { x: px(0), y: py(b) }, d = { x: sx, y: -a * sy };
+          let x = ((pointer.x - p0.x) * d.x + (pointer.y - p0.y) * d.y) / (d.x * d.x + d.y * d.y);
+          x = Math.max(bounds.xMin, Math.min(bounds.xMax, x));
+          let y = a * x + b;
+          if (y < bounds.yMin || y > bounds.yMax) { y = Math.max(bounds.yMin, Math.min(bounds.yMax, y)); x = a === 0 ? x : (y - b) / a; }
+          const X = px(x), Y = py(y);
+          ctx.save(); ctx.setLineDash([5, 5]); ctx.lineWidth = 1.4; ctx.strokeStyle = '#ff4b61';
+          ctx.beginPath(); ctx.moveTo(X, py(0)); ctx.lineTo(X, Y); ctx.moveTo(px(0), Y); ctx.lineTo(X, Y); ctx.stroke(); ctx.restore();
+          ctx.fillStyle = '#ff4b61'; ctx.beginPath(); ctx.arc(X, Y, 6, 0, Math.PI * 2); ctx.fill();
+          ctx.font = '600 12px ui-monospace, SFMono-Regular, Consolas, monospace';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(format(x), X, py(0) + 8);
+          ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(format(y), px(0) - 9, Y);
+          drawPointLabel(`T (${format(x)}, ${format(y)})`, X, Y, { w, h, pad, axisX: px(0), axisY: py(0), a, sx, sy, b });
+          readout.textContent = `T (${format(x)}, ${format(y)})`;
+        } else readout.textContent = 'Pomakni pokazivač preko grafa';
+      }
+      function drawPointLabel(text, X, Y, graph) {
+        ctx.save();
+        ctx.font = '600 12px ui-monospace, SFMono-Regular, Consolas, monospace';
+        const padding = 6, width = ctx.measureText(text).width + padding * 2, height = 26;
+        const d = { x: graph.sx, y: -graph.a * graph.sy };
+        const length = Math.hypot(d.x, d.y) || 1;
+        const normal = { x: -d.y / length, y: d.x / length };
+        const candidates = [
+          { x: X + normal.x * 18, y: Y + normal.y * 18 },
+          { x: X - normal.x * 18, y: Y - normal.y * 18 },
+          { x: X + 16, y: Y - 17 }, { x: X + 16, y: Y + 17 },
+          { x: X - 16, y: Y - 17 }, { x: X - 16, y: Y + 17 }
+        ];
+        const score = candidate => {
+          const left = candidate.x - (candidate.x < X ? width : 0), top = candidate.y - height / 2;
+          const right = left + width, bottom = top + height;
+          const outside = Math.max(0, graph.pad.left - left) + Math.max(0, right - (graph.w - graph.pad.right)) + Math.max(0, graph.pad.top - top) + Math.max(0, bottom - (graph.h - graph.pad.bottom));
+          const crossesAxis = (left < graph.axisX && graph.axisX < right) || (top < graph.axisY && graph.axisY < bottom);
+          const lineYAt = screenX => graph.axisY - graph.b * graph.sy - (graph.a * graph.sy / graph.sx) * (screenX - graph.axisX);
+          const lineCrossesLabel = (lineYAt(left) >= top && lineYAt(left) <= bottom) || (lineYAt(right) >= top && lineYAt(right) <= bottom);
+          return outside * 10000 + (crossesAxis ? 2000 : 0) + (lineCrossesLabel ? 500 : 0) + Math.hypot(candidate.x - X, candidate.y - Y) * .01;
+        };
+        const best = candidates.reduce((choice, candidate) => score(candidate) < score(choice) ? candidate : choice, candidates[0]);
+        const left = best.x - (best.x < X ? width : 0), top = best.y - height / 2;
+        ctx.fillStyle = 'rgba(7, 13, 22, .94)'; ctx.strokeStyle = 'rgba(255, 75, 97, .7)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.roundRect(left, top, width, height, 6); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#ff4b61'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, left + padding, top + height / 2);
+        ctx.restore();
+      }
+      const setPointer = event => { const r = canvas.getBoundingClientRect(); pointer = { x: event.clientX - r.left, y: event.clientY - r.top }; draw(); };
+      canvas.addEventListener('pointermove', setPointer); canvas.addEventListener('pointerleave', () => { pointer = null; draw(); });
+      window.addEventListener('resize', resize); resize();
+    })();
+  </script>
+</body>
+</html>
