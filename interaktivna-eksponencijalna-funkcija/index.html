@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Interaktivni graf eksponencijalne funkcije b^(cx+d)+e.">
+<title>Interaktivna eksponencijalna funkcija</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23060911'/%3E%3Cpath d='M8 51C26 51 30 49 36 42S45 17 56 9' fill='none' stroke='%231fffd2' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{color-scheme:dark;--bg:#03060c;--panel:#09111c;--edge:#293d53;--muted:#a9b8c9;--teal:#1fffd2}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:#f1f7ff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}main{width:min(1180px,calc(100% - 28px));margin:auto;padding:28px 0 38px}header{margin-bottom:19px}.eyebrow{color:var(--teal);font-size:.78rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}h1{margin:7px 0 5px;font-size:clamp(1.65rem,3.5vw,2.5rem);line-height:1.12}.subtitle{margin:0;color:var(--muted)}.formula{display:inline-block;margin-top:13px;padding:9px 13px;border:1px solid #24534f;border-radius:9px;background:#071713;color:var(--teal);font:600 1.16rem Georgia,"Times New Roman",serif}.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:17px;align-items:stretch}.panel,.chart-card{border:1px solid var(--edge);border-radius:15px;background:var(--panel);box-shadow:0 18px 50px #0008}.panel{padding:20px}.panel h2{margin:0 0 6px;font-size:1.05rem}.hint{margin:0 0 20px;color:var(--muted);font-size:.9rem;line-height:1.5}.control{margin:19px 0 22px}.control-title{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px}label{font-size:.95rem;font-weight:700}output{color:var(--teal);font:700 1rem ui-monospace,SFMono-Regular,Consolas,monospace}.fields{display:grid;grid-template-columns:minmax(0,1fr) 79px;gap:10px;align-items:center}input[type=range]{width:100%;accent-color:var(--teal)}input[type=number]{width:100%;padding:8px;border:1px solid #40556b;border-radius:7px;background:#07101b;color:#fff;font:inherit}.chart-card{padding:12px;min-width:0}canvas{display:block;width:100%;height:min(67vh,610px);min-height:380px;border:1px solid #26394b;border-radius:10px;background:#02050a}.chart-caption{margin:9px 4px 0;color:var(--muted);font-size:.82rem}@media(max-width:760px){main{width:calc(100% - 22px);padding-top:20px}.layout{grid-template-columns:1fr}.chart-card{order:1}.panel{order:2}canvas{height:54vh;min-height:330px}}
+</style></head>
+<body><main>
+<header><div class="eyebrow">Interaktivna matematika</div><h1>Eksponencijalna funkcija</h1><p class="subtitle">Istraži kako parametri mijenjaju oblik i položaj grafa.</p><div id="formula" class="formula" aria-live="polite">f(x) = 2<sup>(1x + 0)</sup> + 0</div></header>
+<section class="layout" aria-label="Kontrole i graf eksponencijalne funkcije">
+<aside class="panel"><h2>Parametri funkcije</h2><p class="hint">Podesi bazu, koeficijent uz x, pomak eksponenta i vertikalni pomak.</p>
+<div class="control"><div class="control-title"><label for="bRange">Baza – b</label><output id="bOutput">2</output></div><div class="fields"><input id="bRange" type="range" min="0.2" max="5" step="0.1" value="2"><input id="bNumber" type="number" min="0.2" max="5" step="0.1" value="2" aria-label="Vrijednost baze b"></div></div>
+<div class="control"><div class="control-title"><label for="cRange">Koeficijent – c</label><output id="cOutput">1</output></div><div class="fields"><input id="cRange" type="range" min="-3" max="3" step="0.1" value="1"><input id="cNumber" type="number" min="-3" max="3" step="0.1" value="1" aria-label="Vrijednost koeficijenta c"></div></div>
+<div class="control"><div class="control-title"><label for="dRange">Pomak eksponenta – d</label><output id="dOutput">0</output></div><div class="fields"><input id="dRange" type="range" min="-6" max="6" step="0.1" value="0"><input id="dNumber" type="number" min="-6" max="6" step="0.1" value="0" aria-label="Vrijednost pomaka d"></div></div>
+<div class="control"><div class="control-title"><label for="eRange">Vertikalni pomak – e</label><output id="eOutput">0</output></div><div class="fields"><input id="eRange" type="range" min="-6" max="6" step="0.1" value="0"><input id="eNumber" type="number" min="-6" max="6" step="0.1" value="0" aria-label="Vrijednost pomaka e"></div></div>
+</aside><div class="chart-card"><canvas id="graph" aria-label="Graf funkcije f(x)=b na potenciju cx plus d, plus e"></canvas><p class="chart-caption">Prikazani raspon: −6 ≤ x ≤ 6 i −8 ≤ y ≤ 8</p></div>
+</section></main>
+<script>
+(function(){
+var canvas=document.getElementById('graph'),ctx=canvas.getContext('2d'),formula=document.getElementById('formula'),names=['b','c','d','e'],controls={};
+names.forEach(function(n){controls[n]={range:document.getElementById(n+'Range'),number:document.getElementById(n+'Number'),output:document.getElementById(n+'Output')}});
+function clean(n){return Math.abs(n)<1e-9?0:n}
+function fmt(n){return clean(n).toLocaleString('hr-HR',{maximumFractionDigits:2})}
+function params(){var p={};names.forEach(function(n){p[n]=Number(controls[n].range.value)});return p}
+function signed(n){return n<0?' − '+fmt(Math.abs(n)):' + '+fmt(n)}
+function value(x,p){return Math.pow(p.b,p.c*x+p.d)+p.e}
+function updateFormula(p){formula.innerHTML='f(x) = '+fmt(p.b)+'<sup>('+fmt(p.c)+'x'+signed(p.d)+')</sup>'+signed(p.e)}
+function sync(n,raw){var el=controls[n];if(raw===''||!Number.isFinite(Number(raw)))return;var v=Math.max(Number(el.range.min),Math.min(Number(el.range.max),Number(raw)));if(n==='b')v=Math.max(.2,v);el.range.value=v;el.number.value=v;el.output.textContent=fmt(v);draw()}
+names.forEach(function(n){controls[n].range.addEventListener('input',function(e){sync(n,e.target.value)});controls[n].number.addEventListener('input',function(e){sync(n,e.target.value)});controls[n].number.addEventListener('change',function(e){sync(n,e.target.value)})});
+function resize(){var r=canvas.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(r.width*d);canvas.height=Math.round(r.height*d);ctx.setTransform(d,0,0,d,0,0);draw()}
+function draw(){var w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;var pad={l:54,r:24,t:24,b:44},xmin=-6,xmax=6,ymin=-8,ymax=8,sx=(w-pad.l-pad.r)/(xmax-xmin),sy=(h-pad.t-pad.b)/(ymax-ymin),px=function(x){return pad.l+(x-xmin)*sx},py=function(y){return h-pad.b-(y-ymin)*sy},p=params();
+ctx.clearRect(0,0,w,h);ctx.fillStyle='#02050a';ctx.fillRect(0,0,w,h);ctx.lineWidth=1;ctx.strokeStyle='rgba(150,180,205,.2)';ctx.fillStyle='#e2edf8';ctx.font='12px ui-monospace,monospace';ctx.textAlign='center';ctx.textBaseline='top';
+for(var x=xmin;x<=xmax;x++){ctx.beginPath();ctx.moveTo(px(x),pad.t);ctx.lineTo(px(x),h-pad.b);ctx.stroke();if(x!==0)ctx.fillText(String(x).replace('-','−'),px(x),py(0)+8)}
+ctx.textAlign='right';ctx.textBaseline='middle';for(var y=ymin;y<=ymax;y++){ctx.beginPath();ctx.moveTo(pad.l,py(y));ctx.lineTo(w-pad.r,py(y));ctx.stroke();if(y!==0)ctx.fillText(String(y).replace('-','−'),px(0)-9,py(y))}
+ctx.strokeStyle='#f7fbff';ctx.lineWidth=1.35;ctx.beginPath();ctx.moveTo(pad.l,py(0));ctx.lineTo(w-pad.r+6,py(0));ctx.moveTo(px(0),h-pad.b);ctx.lineTo(px(0),pad.t-5);ctx.stroke();ctx.fillStyle='#fff';ctx.font='italic 15px Georgia,serif';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText('x',w-pad.r+7,py(0));ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('y',px(0),pad.t-7);ctx.font='12px ui-monospace,monospace';ctx.textAlign='right';ctx.textBaseline='top';ctx.fillText('0',px(0)-8,py(0)+8);
+if(p.e>=ymin&&p.e<=ymax){ctx.save();ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(31,255,210,.42)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad.l,py(p.e));ctx.lineTo(w-pad.r,py(p.e));ctx.stroke();ctx.restore()}
+ctx.save();ctx.beginPath();ctx.rect(pad.l,pad.t,w-pad.l-pad.r,h-pad.t-pad.b);ctx.clip();ctx.strokeStyle='#1fffd2';ctx.shadowColor='#1fffd2';ctx.shadowBlur=12;ctx.lineWidth=2.8;ctx.beginPath();var started=false;
+for(var i=0;i<=1400;i++){var xx=xmin+(xmax-xmin)*i/1400,yy=value(xx,p);if(!Number.isFinite(yy)||yy>ymax+20){started=false;continue}yy=Math.max(ymin-20,yy);if(!started){ctx.moveTo(px(xx),py(yy));started=true}else ctx.lineTo(px(xx),py(yy))}
+ctx.stroke();ctx.restore();updateFormula(p)}
+window.addEventListener('resize',resize);resize()
+})();
+</script></body></html>
